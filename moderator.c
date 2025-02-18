@@ -156,6 +156,7 @@ int main(int argc, char *argv[]) {
             msgctl(msgid, IPC_RMID, NULL);
             break;
         }else{
+            all_messages[msg_rcv - tot_msg_rcv].mtype = 100 + all_messages[msg_rcv - tot_msg_rcv].modifyingGroup;
             if (msgsnd(msgid, &all_messages[msg_rcv - tot_msg_rcv], sizeof(Message) - sizeof(long), 0) == -1) {
                 perror("msgsnd");
                 exit(1);

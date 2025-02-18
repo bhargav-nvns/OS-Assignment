@@ -166,10 +166,6 @@ int main(int argc, char *argv[]) {
             close(pipefd[0]); // Close read end
         }
     }
-    for(int i=0;i<total_messages;i =i+10){
-        printf("mtype: %ld, user: %d, group: %d, timestamp: %d, message: %s\n", all_messages[i].mtype, all_messages[i].user, all_messages[i].modifyingGroup, all_messages[i].timestamp, all_messages[i].mtext);
-    }
-    printf("Total messages: %d in group no %d\n", total_messages, grp_no);
     Message num_msg;
     num_msg.mtype = 10;
     num_msg.timestamp = 0;
@@ -181,7 +177,6 @@ int main(int argc, char *argv[]) {
     }
     int msg_sent_to_mod = 0;
     for (int j = 0; j < total_messages; j++) {
-        printf("Debug: Sending message with mtype: %ld, user: %d, group: %d, timestamp: %d, message: %s\n", all_messages[j].mtype, all_messages[j].user, all_messages[j].modifyingGroup, all_messages[j].timestamp, all_messages[j].mtext);
         if (msgsnd(msg_id_mod, &all_messages[j], sizeof(Message) - sizeof(long), 0) == -1) {
             perror("msgsnd");
             exit(1);
@@ -190,7 +185,6 @@ int main(int argc, char *argv[]) {
             printf("message sent to mod form group %d user %d\n",all_messages[j].modifyingGroup, all_messages[j].user);
         }
     }
-    printf("no of messages sent %d from grp no %d\n", msg_sent_to_mod, grp_no);
     Message to_validation[total_messages];
     Message temp;
     Message recived_msg[total_messages];
@@ -200,14 +194,14 @@ int main(int argc, char *argv[]) {
     while(num_recived < total_messages) {
         if (msgrcv(msg_id_mod, &temp, sizeof(Message) - sizeof(long), 100+grp_no, 0) == -1) {
             printf("error in line 197\n");
-            perror("msgrcv");
             exit(1);
         }else{
+            temp.mtype = temp.mtype - 70;
             recived_msg[num_recived] = temp;
             num_recived++;
+            printf("message recived from mod to group %d user %d remaining: %d\n",temp.modifyingGroup, temp.user, total_messages - num_recived);
         }
     }
-    printf("no of messages recived %d from grp no %d\n", num_recived, grp_no);
     qsort(recived_msg, num_recived, sizeof(Message), compare_messages);
     int msg_rcv_per_usr[user_num];
     for (int i = 0; i < user_num; i++) {
@@ -241,6 +235,7 @@ int main(int argc, char *argv[]) {
     }
     for (int i = 0; i < valid_messages; i++) {
         if (msgsnd(msg_id_val, &to_validation[i], sizeof(Message) - sizeof(long), 0) == -1) {
+            printf("error in sending valid messages\n");
             perror("msgsnd");
             exit(1);
         }
@@ -252,10 +247,12 @@ int main(int argc, char *argv[]) {
         delete_grp.user = no_usr_removed;
         delete_grp.modifyingGroup = grp_no;
         if (msgsnd(msg_id_val, &delete_grp, sizeof(Message) - sizeof(long), 0) == -1) {
+            printf("error in sending delete group to validation\n");
             perror("msgsnd");
             exit(1);
         }
         if (msgsnd(msg_id_app, &delete_grp, sizeof(Message) - sizeof(long), 0) == -1) {
+            printf("error in sending delete group to app\n");
             perror("msgsnd");
             exit(1);
         }

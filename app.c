@@ -86,8 +86,8 @@ int main(int argc, char *argv[])
     }
     while (fg < ngrp) {             
         if (msgrcv(mqid, &rec_msg, sizeof(rec_msg) - sizeof(long), 3, 0) == -1) {
-            perror("msgrcv failed");
-            continue;  
+            printf("Error receiving message from group\n");
+            exit(1);
         }else{
             printf("All users terminated. Exiting group process %d.\n", rec_msg.modifyingGroup);
             fg++; 
