@@ -187,6 +187,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    qsort(all_messages, total_messages, sizeof(Message), compare_messages);
     int messages_per_user[50] = {0};
     Message num_msg;
     num_msg.mtype = 10;

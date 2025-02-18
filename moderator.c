@@ -115,6 +115,7 @@ int main(int argc, char *argv[]) {
     int percentage_filled_mod;
     printf("Total messages updated to: %d\n", total_no_of_messages);
     unsigned long num_bytes_mod;
+    Message temp2;
     while(msg_rcv<total_no_of_messages || grp_rcv < no_groups){
         if(msgctl(msgid,IPC_STAT,&buff_mod) == -1){
             perror("msgctl");
@@ -145,7 +146,8 @@ int main(int argc, char *argv[]) {
                     printf("User %d from group %d has been banned.\n", user, group);
                     continue;
                 }
-                int violation_count = count_violations(temp.mtext, filtered_words, word_count);
+                temp2 = temp;
+                int violation_count = count_violations(temp2.mtext, filtered_words, word_count);
                 violations[group][user] += violation_count;
                 if(violations[group][user] >= violation_threshold){
                     printf("User %d from group %d has been removed due to %d violations at %ld\n", user, group, violations[group][user], temp.timestamp);
@@ -175,7 +177,7 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }else{
                 
-                printf("Message sent back to group %d user %d remainding : %d message: %s\n", all_messages[msg_rcv - tot_msg_rcv].modifyingGroup, all_messages[msg_rcv - tot_msg_rcv].user, tot_msg_rcv, all_messages[msg_rcv - tot_msg_rcv].mtext);
+                printf("Message sent back to group %d user %d remainding : %d time %d message: %s \n", all_messages[msg_rcv - tot_msg_rcv].modifyingGroup, all_messages[msg_rcv - tot_msg_rcv].user, tot_msg_rcv,all_messages[msg_rcv - tot_msg_rcv].timestamp, all_messages[msg_rcv - tot_msg_rcv].mtext);
                 tot_msg_rcv--;
             }
         }

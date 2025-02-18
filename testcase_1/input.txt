@@ -2,7 +2,7 @@
 9598308
 23522143
 64188891
-2
+4
 groups/group_2.txt
 groups/group_5.txt
 groups/group_9.txt
