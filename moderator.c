@@ -22,8 +22,7 @@ typedef struct {
 } Message;
 
 // Global arrays to track violations and banned users
-int violations[MAX_GROUPS][MAX_USERS] = { {0} };
-int removed[MAX_GROUPS][MAX_USERS] = { {0} };
+
 
 // Helper function to convert a string to lowercase
 void to_lowercase(char *str) {
@@ -48,7 +47,8 @@ int main(int argc, char *argv[]) {
         printf("Provide testcase number\n");
         exit(1);
     }
-
+    int violations[MAX_GROUPS][MAX_USERS] = { {0} };
+    int removed[MAX_GROUPS][MAX_USERS] = { {0} };
     // Initialize total number of messages
     int total_no_of_messages = 0;
 
@@ -90,25 +90,37 @@ int main(int argc, char *argv[]) {
     }
     
     fclose(fp_input);
-
+    printf("No of groups: %d, GV key: %d, AV key: %d, Moderator key: %d, Violation threshold: %d\n", no_groups, gv_key, av_key, moderator_key, violation_threshold);
     // Connect or create the message queue for moderator
-    int msgid = msgget(moderator_key, 0666);
-    if (msgid != -1) {
-        // Delete the existing message queue
-        msgctl(msgid, IPC_RMID, NULL);
-    }
+    // int msgid = msgget(moderator_key, 0666);
+    // if (msgid != -1) {
+    //     // Delete the existing message queue
+    //     msgctl(msgid, IPC_RMID, NULL);
+    // }
+    int
     msgid = msgget(moderator_key, IPC_CREAT | 0666);
     if (msgid == -1) {
         perror("Error creating message queue");
         exit(1);
     }
+    struct msqid_ds buff_mod;
+
     Message all_messages[5000];
     int msg_rcv = 0;
     int grp_rcv =0;
     Message temp;
     total_no_of_messages = 0;
+    int percentage_filled_mod;
     printf("Total messages updated to: %d\n", total_no_of_messages);
-    while(msg_rcv<total_no_of_messages | grp_rcv < no_groups){
+    unsigned long num_bytes_mod;
+    while(msg_rcv<total_no_of_messages || grp_rcv < no_groups){
+        if(msgctl(msgid,IPC_STAT,&buff_mod) == -1){
+            perror("msgctl");
+            exit(1);
+        }
+        num_bytes_mod = buff_mod.msg_qnum*sizeof(Message);
+        percentage_filled_mod = (100*num_bytes_mod)/buff_mod.msg_qbytes;
+        //printf("num_bytes_mod: %lu\n", num_bytes_mod);
         if(msgrcv(msgid, &temp, sizeof(Message) - sizeof(long), 0, 0) == -1){
             perror("Error receiving message");
             continue;
@@ -122,7 +134,8 @@ int main(int argc, char *argv[]) {
             if(temp.mtype >= (MAX_GROUPS + 1) && temp.mtype <= (MAX_GROUPS + MAX_GROUPS)){
                 int group = temp.modifyingGroup;
                 int user = temp.user;
-                printf("Message received from user %d in group %d\n -- Rem Messages %d\n", user, group, total_no_of_messages - msg_rcv);
+                
+               // printf("Message received from user %d in group %d-- Rem Messages %d percentage filled: %d\n", user, group, total_no_of_messages - msg_rcv, percentage_filled_mod);
                 if(removed[group][user] == 1){
                     temp.timestamp = 0;
                     all_messages[msg_rcv] = temp;
@@ -130,10 +143,12 @@ int main(int argc, char *argv[]) {
                     printf("User %d from group %d has been banned.\n", user, group);
                     continue;
                 }
-                int violation_count = count_violations(temp.mtext, filtered_words, word_count);
+                char *s = temp.mtext;
+                to_lowercase(s);
+                int violation_count = count_violations(s, filtered_words, word_count);
                 violations[group][user] += violation_count;
                 if(violations[group][user] >= violation_threshold){
-                    printf("User %d from group %d has been removed due to %d violations.\n", user, group, violations[group][user]);
+                    printf("User %d from group %d has been removed due to %d violations at %ld\n", user, group, violations[group][user], temp.timestamp);
                     removed[group][user] = 1;
                     temp.timestamp = -temp.timestamp;
                     all_messages[msg_rcv] = temp;

@@ -66,6 +66,21 @@ int main(int argc, char *argv[]) {
     }else{
         printf("key_val: %d, key_app: %d, key_mod: %d\n", key_val, key_app, key_mod);
     }
+    struct msqid_ds buff_val;
+    if(msgctl(msg_id_val,IPC_STAT,&buff_val) == -1){
+        perror("msgctl");
+        exit(1);
+    }
+    struct msqid_ds buff_app;
+    if(msgctl(msg_id_app,IPC_STAT,&buff_app) == -1){
+        perror("msgctl");
+        exit(1);
+    }
+    struct msqid_ds buff_mod;
+    if(msgctl(msg_id_mod,IPC_STAT,&buff_mod) == -1){
+        perror("msgctl");
+        exit(1);
+    }
     Message grp_creation;
     grp_creation.mtype = 1;
     grp_creation.modifyingGroup = grp_no;
@@ -180,6 +195,8 @@ int main(int argc, char *argv[]) {
         //printf("Total messages sent to mod: %d form group no %d\n", num_msg.user,num_msg.modifyingGroup);
     }
     int msg_sent_to_mod = 0;
+    unsigned long num_bytes_mod;
+    int percentage_filled_mod;
     for (int j = 0; j < total_messages; j++) {
         if (msgsnd(msg_id_mod, &all_messages[j], sizeof(Message) - sizeof(long), 0) == -1) {
             perror("msgsnd");
@@ -187,7 +204,16 @@ int main(int argc, char *argv[]) {
         }else{
             messages_per_user[all_messages[j].user]++;
             msg_sent_to_mod++;
-            printf("message sent to mod form group %d user %d\n",all_messages[j].modifyingGroup, all_messages[j].user);
+            if(msgctl(msg_id_mod,IPC_STAT,&buff_mod) == -1){
+                perror("msgctl");
+                exit(1);
+            }
+            num_bytes_mod = buff_mod.msg_qnum*276;
+            percentage_filled_mod = (100*num_bytes_mod)/buff_mod.msg_qbytes;
+            printf("message sent to mod form group %d user %d percentage filled: %d\n",all_messages[j].modifyingGroup, all_messages[j].user, percentage_filled_mod);
+            if(percentage_filled_mod >= 80){
+                sleep(1);
+            }
         }
     }
     Message to_validation[total_messages];
@@ -204,7 +230,7 @@ int main(int argc, char *argv[]) {
             temp.mtype = temp.mtype - 70;
             recived_msg[num_recived] = temp;
             num_recived++;
-            printf("message recived from mod to group %d user %d remaining: %d message: %s timestamp %d\n",temp.modifyingGroup, temp.user, total_messages - num_recived, temp.mtext, temp.timestamp);
+            //printf("message recived from mod to group %d user %d remaining: %d message: %s timestamp %d\n",temp.modifyingGroup, temp.user, total_messages - num_recived, temp.mtext, temp.timestamp);
         }
     }
     qsort(recived_msg, num_recived, sizeof(Message), compare_messages);
@@ -241,7 +267,7 @@ int main(int argc, char *argv[]) {
             perror("msgsnd");
             exit(1);
         }else{
-            printf("message sent to validation from group %d user %d\n",to_validation[i].modifyingGroup, to_validation[i].user);
+            printf("message sent to validation from group %d user %d at time %d\n",to_validation[i].modifyingGroup, to_validation[i].user,to_validation[i].timestamp);
         }
     }
     if(user_active < 2){
