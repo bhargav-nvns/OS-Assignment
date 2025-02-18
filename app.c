@@ -62,8 +62,11 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
-    fclose(inpf);                  
-
+    fclose(inpf);       
+    mqid = msgget(k_app, 0666);           
+    if(mqid != -1){
+        msgctl(mqid, IPC_RMID, NULL);
+    }
     mqid = msgget(k_app, IPC_CREAT | 0666);
     if (mqid == -1) {
         perror("msgget failed for k_app");

@@ -106,21 +106,19 @@ int main(int argc, char *argv[]) {
     int msg_rcv = 0;
     int grp_rcv =0;
     Message temp;
-    while(grp_rcv<no_groups){
-        if(msgrcv(msgid, &temp, sizeof(Message) - sizeof(long), 10, 0) == -1){
-            perror("Error receiving message");
-            continue;
-        }else{
-            total_no_of_messages += temp.user;
-            grp_rcv++;
-        }
-    }
+    total_no_of_messages = 0;
     printf("Total messages updated to: %d\n", total_no_of_messages);
-    while(msg_rcv<total_no_of_messages){
+    while(msg_rcv<total_no_of_messages | grp_rcv < no_groups){
         if(msgrcv(msgid, &temp, sizeof(Message) - sizeof(long), 0, 0) == -1){
             perror("Error receiving message");
             continue;
         }else{
+            if(temp.mtype ==10){
+                total_no_of_messages += temp.user;
+                grp_rcv++;
+                continue;
+            }
+
             if(temp.mtype >= (MAX_GROUPS + 1) && temp.mtype <= (MAX_GROUPS + MAX_GROUPS)){
                 int group = temp.modifyingGroup;
                 int user = temp.user;
@@ -147,7 +145,7 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    
+    printf("out of while");
     int tot_msg_rcv = msg_rcv;
 
     while(1){
