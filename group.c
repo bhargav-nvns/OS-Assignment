@@ -7,6 +7,7 @@
 #include <sys/msg.h>
 #include <unistd.h>
 #include <sys/wait.h>
+
 typedef struct {
     long mtype;
     int timestamp;
@@ -14,11 +15,13 @@ typedef struct {
     char mtext[256];
     int modifyingGroup;
 } Message;
+
 int compare_messages(const void *a, const void *b) {
     Message *msgA = (Message *)a;
     Message *msgB = (Message *)b;
     return (msgA->timestamp - msgB->timestamp);
 }
+
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <file_path>\n", argv[0]);
@@ -178,11 +181,13 @@ int main(int argc, char *argv[]) {
     }
     int msg_sent_to_mod = 0;
     for (int j = 0; j < total_messages; j++) {
+        printf("Debug: Sending message with mtype: %ld, user: %d, group: %d, timestamp: %d, message: %s\n", all_messages[j].mtype, all_messages[j].user, all_messages[j].modifyingGroup, all_messages[j].timestamp, all_messages[j].mtext);
         if (msgsnd(msg_id_mod, &all_messages[j], sizeof(Message) - sizeof(long), 0) == -1) {
             perror("msgsnd");
             exit(1);
         }else{
             msg_sent_to_mod++;
+            printf("message sent to mod form group %d user %d\n",all_messages[j].modifyingGroup, all_messages[j].user);
         }
     }
     printf("no of messages sent %d from grp no %d\n", msg_sent_to_mod, grp_no);
@@ -193,11 +198,12 @@ int main(int argc, char *argv[]) {
     int valid_messages = 0;
     int user_active = user_num;
     while(num_recived < total_messages) {
-        if (msgrcv(msg_id_mod, &temp, sizeof(Message) - sizeof(long), 30+grp_no, 0) == -1) {
+        if (msgrcv(msg_id_mod, &temp, sizeof(Message) - sizeof(long), 100+grp_no, 0) == -1) {
             printf("error in line 197\n");
             perror("msgrcv");
             exit(1);
         }else{
+            temp.mtype = temp.mtype-70;
             recived_msg[num_recived] = temp;
             num_recived++;
         }

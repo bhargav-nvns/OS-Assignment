@@ -6,7 +6,8 @@
 #include <sys/msg.h>
 #include <errno.h>
 #include <unistd.h>
-
+#include <sys/types.h>
+#include <sys/wait.h>
 #define MAX_FILTERED_WORDS 50
 #define MAX_WORD_LENGTH 20
 #define MAX_GROUPS 30
@@ -40,20 +41,6 @@ int count_violations(char *message, char filtered_words[MAX_FILTERED_WORDS][MAX_
         }
     }
     return violation_count;
-}
-
-// Function to check if the message queue is empty
-int is_queue_empty(int msgid) {
-    struct msqid_ds buf;
-
-    // Get the status of the message queue
-    if (msgctl(msgid, IPC_STAT, &buf) == -1) {
-        perror("Error retrieving message queue status");
-        return -1; // Return -1 in case of an error
-    }
-
-    // Check if the queue is empty
-    return buf.msg_qnum == 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -105,68 +92,81 @@ int main(int argc, char *argv[]) {
     fclose(fp_input);
 
     // Connect or create the message queue for moderator
-    int msgid = msgget(moderator_key, IPC_CREAT | 0666);
+    int msgid = msgget(moderator_key, 0666);
+    if (msgid != -1) {
+        // Delete the existing message queue
+        msgctl(msgid, IPC_RMID, NULL);
+    }
+    msgid = msgget(moderator_key, IPC_CREAT | 0666);
     if (msgid == -1) {
         perror("Error creating message queue");
         exit(1);
     }
-
-    while (1) {
-        Message msg;
-
-        // Receive messages from groups.c
-        if (msgrcv(msgid, &msg, sizeof(msg) - sizeof(msg.mtype), 0, 0) == -1) {
-            if (errno == EIDRM || errno == ENOMSG) {
-                break; // Exit when the queue is deleted or no more messages
-            }
+    Message all_messages[5000];
+    int msg_rcv = 0;
+    int grp_rcv =0;
+    Message temp;
+    while(grp_rcv<no_groups){
+        if(msgrcv(msgid, &temp, sizeof(Message) - sizeof(long), 10, 0) == -1){
             perror("Error receiving message");
             continue;
+        }else{
+            total_no_of_messages += temp.user;
+            grp_rcv++;
         }
-
-        if (msg.mtype == 10) {
-            // Update total_no_of_messages when mtype=10
-            total_no_of_messages += msg.user;
-            printf("Total messages updated to: %d for group: %d\n", total_no_of_messages, msg.modifyingGroup);
+    }
+    printf("Total messages updated to: %d\n", total_no_of_messages);
+    while(msg_rcv<total_no_of_messages){
+        if(msgrcv(msgid, &temp, sizeof(Message) - sizeof(long), 0, 0) == -1){
+            perror("Error receiving message");
             continue;
-        } else if (msg.mtype >= MAX_GROUPS + 1 && msg.mtype <= MAX_GROUPS + no_groups) {
-            // Handle messages from users in specific groups
-            total_no_of_messages--;
-            printf("Total messages remaining: %d\n", total_no_of_messages);
-            int group = msg.modifyingGroup;
-            int user = msg.user;
-
-            if (removed[group][user] == 1) {
-                // User is already banned
-                msg.timestamp = 0;
-                msgsnd(msgid, &msg, sizeof(msg) - sizeof(msg.mtype), 0);
-                continue;
+        }else{
+            if(temp.mtype >= (MAX_GROUPS + 1) && temp.mtype <= (MAX_GROUPS + no_groups)){
+                int group = temp.modifyingGroup;
+                int user = temp.user;
+                printf("Message received from user %d in group %d\n", user, group);
+                if(removed[group][user] == 1){
+                    temp.timestamp = 0;
+                    all_messages[msg_rcv] = temp;
+                    msg_rcv++;
+                    printf("User %d from group %d has been removed due to %d violations.\n", user, group, violations[group][user]);
+                    continue;
+                }
+                int violation_count = count_violations(temp.mtext, filtered_words, word_count);
+                violations[group][user] += violation_count;
+                if(violations[group][user] >= violation_threshold){
+                    printf("User %d from group %d has been removed due to %d violations.\n", user, group, violations[group][user]);
+                    removed[group][user] = 1;
+                    temp.timestamp = -temp.timestamp;
+                    all_messages[msg_rcv] = temp;
+                    msg_rcv++;
+                }else{
+                    all_messages[msg_rcv] = temp;
+                    msg_rcv++;
+                }
             }
-
-            // Count violations in the message text
-            int violation_count = count_violations(msg.mtext, filtered_words, word_count);
-            violations[group][user] += violation_count;
-
-            if (violations[group][user] >= violation_threshold) {
-                // User gets banned due to this message
-                printf("User %d from group %d has been removed due to %d violations.\n", user, group, violations[group][user]);
-                removed[group][user] = 1;
-
-                msg.timestamp = -msg.timestamp; // Indicate that this message should still be sent back
-                msgsnd(msgid, &msg, sizeof(msg) - sizeof(msg.mtype), 0);
-            } else {
-                // User is not banned yet
-                msgsnd(msgid, &msg, sizeof(msg) - sizeof(msg.mtype), 0);
-            }
-            msg.mtype = 15;
         }
+    }
+    
+    int tot_msg_rcv = msg_rcv;
 
-        // Check both conditions before deleting the queue
-        if (total_no_of_messages <= 0 && is_queue_empty(msgid)) {
+    while(1){
+        if(tot_msg_rcv <= 0){
             printf("All messages processed and queue is empty. Deleting message queue and exiting.\n");
             msgctl(msgid, IPC_RMID, NULL);
             break;
+        }else{
+            all_messages[msg_rcv - tot_msg_rcv].mtype = 100 + all_messages[msg_rcv - tot_msg_rcv].modifyingGroup;
+            if (msgsnd(msgid, &all_messages[msg_rcv - tot_msg_rcv], sizeof(Message) - sizeof(long), 0) == -1) {
+                perror("msgsnd");
+                exit(1);
+            }else{
+                tot_msg_rcv--;
+            }
         }
+
     }
+
 
     return 0;
 }
