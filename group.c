@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
             exit(1);
         }else{
             msg_sent_to_mod++;
-            printf("message sent to mod form group %d user %d\n",all_messages[j].modifyingGroup, all_messages[j].user);
+            //printf("message sent to mod form group %d user %d\n",all_messages[j].modifyingGroup, all_messages[j].user);
         }
     }
     Message to_validation[total_messages];
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
             temp.mtype = temp.mtype - 70;
             recived_msg[num_recived] = temp;
             num_recived++;
-            printf("message recived from mod to group %d user %d remaining: %d message: %s\n",temp.modifyingGroup, temp.user, total_messages - num_recived, temp.mtext);
+            printf("message recived from mod to group %d user %d remaining: %d message: %s timestamp %d\n",temp.modifyingGroup, temp.user, total_messages - num_recived, temp.mtext, temp.timestamp);
         }
     }
     qsort(recived_msg, num_recived, sizeof(Message), compare_messages);
@@ -233,6 +233,7 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+    printf("Total messages received: %d, valid messages %d, active users %d\n", total_messages, valid_messages, user_active);
     for (int i = 0; i < valid_messages; i++) {
         if (msgsnd(msg_id_val, &to_validation[i], sizeof(Message) - sizeof(long), 0) == -1) {
             printf("error in sending valid messages\n");
@@ -250,11 +251,15 @@ int main(int argc, char *argv[]) {
             printf("error in sending delete group to validation\n");
             perror("msgsnd");
             exit(1);
+        }else{
+            printf("Group %d deleted sent to validation\n", grp_no);
         }
         if (msgsnd(msg_id_app, &delete_grp, sizeof(Message) - sizeof(long), 0) == -1) {
             printf("error in sending delete group to app\n");
             perror("msgsnd");
             exit(1);
+        }else{
+            printf("Group %d deleted sent to group\n", grp_no);
         }
     }
     return 0;
