@@ -121,15 +121,15 @@ int main(int argc, char *argv[]) {
             perror("Error receiving message");
             continue;
         }else{
-            if(temp.mtype >= (MAX_GROUPS + 1) && temp.mtype <= (MAX_GROUPS + no_groups)){
+            if(temp.mtype >= (MAX_GROUPS + 1) && temp.mtype <= (MAX_GROUPS + MAX_GROUPS)){
                 int group = temp.modifyingGroup;
                 int user = temp.user;
-                printf("Message received from user %d in group %d\n", user, group);
+                printf("Message received from user %d in group %d\n -- Rem Messages %d\n", user, group, total_no_of_messages - msg_rcv);
                 if(removed[group][user] == 1){
                     temp.timestamp = 0;
                     all_messages[msg_rcv] = temp;
                     msg_rcv++;
-                    printf("User %d from group %d has been removed due to %d violations.\n", user, group, violations[group][user]);
+                    printf("User %d from group %d has been banned.\n", user, group);
                     continue;
                 }
                 int violation_count = count_violations(temp.mtext, filtered_words, word_count);
@@ -156,12 +156,12 @@ int main(int argc, char *argv[]) {
             msgctl(msgid, IPC_RMID, NULL);
             break;
         }else{
-            all_messages[msg_rcv - tot_msg_rcv].mtype = 100 + all_messages[msg_rcv - tot_msg_rcv].modifyingGroup;
             if (msgsnd(msgid, &all_messages[msg_rcv - tot_msg_rcv], sizeof(Message) - sizeof(long), 0) == -1) {
                 perror("msgsnd");
                 exit(1);
             }else{
                 tot_msg_rcv--;
+                printf("Message sent back to group %d user %d remainding : %d\n", all_messages[msg_rcv - tot_msg_rcv].modifyingGroup, all_messages[msg_rcv - tot_msg_rcv].user, tot_msg_rcv);
             }
         }
 

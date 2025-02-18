@@ -203,7 +203,6 @@ int main(int argc, char *argv[]) {
             perror("msgrcv");
             exit(1);
         }else{
-            temp.mtype = temp.mtype-70;
             recived_msg[num_recived] = temp;
             num_recived++;
         }
