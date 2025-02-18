@@ -21,17 +21,12 @@ typedef struct {
     int modifyingGroup;
 } Message;
 
-// Global arrays to track violations and banned users
-
-
-// Helper function to convert a string to lowercase
 void to_lowercase(char *str) {
     for (; *str; str++) {
         *str = tolower(*str);
     }
 }
 
-// Function to count violations in a message based on filtered words
 int count_violations(char *message, char filtered_words[MAX_FILTERED_WORDS][MAX_WORD_LENGTH], int word_count) {
     int violation_count = 0;
     char *str = message;
@@ -134,16 +129,16 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            if(temp.mtype >= (MAX_GROUPS + 1) && temp.mtype <= (MAX_GROUPS + MAX_GROUPS)){
+            if(temp.mtype >= (MAX_GROUPS) && temp.mtype <= (MAX_GROUPS + MAX_GROUPS)){
                 int group = temp.modifyingGroup;
                 int user = temp.user;
                 
-               // printf("Message received from user %d in group %d-- Rem Messages %d percentage filled: %d\n", user, group, total_no_of_messages - msg_rcv, percentage_filled_mod);
+                printf("Message received from user %d in group %d-- Rem Messages %d time: %d message %s\n", user, group, total_no_of_messages - msg_rcv, temp.timestamp, temp.mtext);
                 if(removed[group][user] == 1){
                     temp.timestamp = 0;
                     all_messages[msg_rcv] = temp;
                     msg_rcv++;
-                    printf("User %d from group %d has been banned.\n", user, group);
+                    //printf("User %d from group %d has been banned.\n", user, group);
                     continue;
                 }
                 temp2 = temp;

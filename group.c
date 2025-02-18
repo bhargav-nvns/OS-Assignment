@@ -216,9 +216,9 @@ int main(int argc, char *argv[]) {
             }
             num_bytes_mod = buff_mod.msg_qnum*276;
             percentage_filled_mod = (100*num_bytes_mod)/buff_mod.msg_qbytes;
-            //printf("message sent to mod form group %d user %d percentage filled: %d\n",all_messages[j].modifyingGroup, all_messages[j].user, percentage_filled_mod);
+            printf("message sent to mod form group %d user %d percentage filled: %d message rem: %d\n",all_messages[j].modifyingGroup, all_messages[j].user, percentage_filled_mod, total_messages - msg_sent_to_mod);
             if(percentage_filled_mod >= 80){
-                sleep(1);
+                sleep(0.25);
             }
         }
     }
