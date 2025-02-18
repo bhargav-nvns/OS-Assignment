@@ -21,7 +21,12 @@ int compare_messages(const void *a, const void *b) {
     Message *msgB = (Message *)b;
     return (msgA->timestamp - msgB->timestamp);
 }
-
+void remove_newline(char *str) {
+    size_t len = strlen(str);
+    if (len > 0 && str[len - 1] == '\n') {
+        str[len - 1] = '\0';
+    }
+}
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <file_path>\n", argv[0]);
@@ -210,7 +215,7 @@ int main(int argc, char *argv[]) {
             }
             num_bytes_mod = buff_mod.msg_qnum*276;
             percentage_filled_mod = (100*num_bytes_mod)/buff_mod.msg_qbytes;
-            printf("message sent to mod form group %d user %d percentage filled: %d\n",all_messages[j].modifyingGroup, all_messages[j].user, percentage_filled_mod);
+            //printf("message sent to mod form group %d user %d percentage filled: %d\n",all_messages[j].modifyingGroup, all_messages[j].user, percentage_filled_mod);
             if(percentage_filled_mod >= 80){
                 sleep(1);
             }
@@ -230,10 +235,9 @@ int main(int argc, char *argv[]) {
             temp.mtype = temp.mtype - 70;
             recived_msg[num_recived] = temp;
             num_recived++;
-            //printf("message recived from mod to group %d user %d remaining: %d message: %s timestamp %d\n",temp.modifyingGroup, temp.user, total_messages - num_recived, temp.mtext, temp.timestamp);
+            //printf("message recived from mod to group %d user %d remaining: %d message: %s timestamp %d mtype %ld\n",temp.modifyingGroup, temp.user, total_messages - num_recived, temp.mtext, temp.timestamp,temp.mtype);
         }
     }
-    qsort(recived_msg, num_recived, sizeof(Message), compare_messages);
     int no_usr_removed = 0;
     for(int i=0;i<total_messages;i++){
         if(recived_msg[i].timestamp < 0){
@@ -260,14 +264,19 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+    qsort(to_validation, valid_messages, sizeof(Message), compare_messages);
     printf("Total messages received: %d, valid messages %d, active users %d\n", total_messages, valid_messages, user_active);
+    for(int i=0;i<valid_messages;i++){
+        printf("message to validation from group %d user %d timestamp %d\n",to_validation[i].modifyingGroup, to_validation[i].user,to_validation[i].timestamp);
+    }
     for (int i = 0; i < valid_messages; i++) {
+        //printf("message to validation from group %d user %d timestamp %d\n",to_validation[i].modifyingGroup, to_validation[i].user,to_validation[i].timestamp);
         if (msgsnd(msg_id_val, &to_validation[i], sizeof(Message) - sizeof(long), 0) == -1) {
             printf("error in sending valid messages\n");
             perror("msgsnd");
             exit(1);
         }else{
-            printf("message sent to validation from group %d user %d at time %d\n",to_validation[i].modifyingGroup, to_validation[i].user,to_validation[i].timestamp);
+            printf("message sent to validation from group %d user %d at time %dtext: %s\n",to_validation[i].modifyingGroup, to_validation[i].user,to_validation[i].timestamp,to_validation[i].mtext);
         }
     }
     if(user_active < 2){

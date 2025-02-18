@@ -34,8 +34,10 @@ void to_lowercase(char *str) {
 // Function to count violations in a message based on filtered words
 int count_violations(char *message, char filtered_words[MAX_FILTERED_WORDS][MAX_WORD_LENGTH], int word_count) {
     int violation_count = 0;
+    char *str = message;
+    to_lowercase(str);
     for (int i = 0; i < word_count; i++) {
-        if (strstr(message, filtered_words[i]) != NULL) {
+        if (strstr(str, filtered_words[i]) != NULL) {
             violation_count++;
         }
     }
@@ -143,9 +145,7 @@ int main(int argc, char *argv[]) {
                     printf("User %d from group %d has been banned.\n", user, group);
                     continue;
                 }
-                char *s = temp.mtext;
-                to_lowercase(s);
-                int violation_count = count_violations(s, filtered_words, word_count);
+                int violation_count = count_violations(temp.mtext, filtered_words, word_count);
                 violations[group][user] += violation_count;
                 if(violations[group][user] >= violation_threshold){
                     printf("User %d from group %d has been removed due to %d violations at %ld\n", user, group, violations[group][user], temp.timestamp);
