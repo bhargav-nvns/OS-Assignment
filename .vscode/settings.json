@@ -2,6 +2,8 @@
     "files.associations": {
         "ipc.h": "c",
         "wait.h": "c",
-        "msg.h": "c"
+        "msg.h": "c",
+        "stdlib.h": "c",
+        "stdio.h": "c"
     }
 }

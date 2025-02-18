@@ -20,6 +20,11 @@ typedef struct {
     char mtext[256];
     int modifyingGroup;
 } Message;
+int compare_messages(const void *a, const void *b) {
+    Message *msgA = (Message *)a;
+    Message *msgB = (Message *)b;
+    return (msgB->modifyingGroup - msgA->modifyingGroup);
+}
 
 void to_lowercase(char *str) {
     for (; *str; str++) {
@@ -102,7 +107,7 @@ int main(int argc, char *argv[]) {
     }
     struct msqid_ds buff_mod;
 
-    Message all_messages[5000];
+    Message all_messages[20000];
     int msg_rcv = 0;
     int grp_rcv =0;
     Message temp;
@@ -159,7 +164,7 @@ int main(int argc, char *argv[]) {
     }
     printf("out of while");
     int tot_msg_rcv = msg_rcv;
-
+    qsort(all_messages, tot_msg_rcv, sizeof(Message), compare_messages);
     while(1){
         if(tot_msg_rcv <= 0){
             printf("All messages processed and exiting.\n");

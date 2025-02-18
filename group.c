@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     fclose(input);
     fclose(file);
     int total_messages =0;
-    Message all_messages[5000];
+    Message all_messages[20000];
     
     for (int i = 0; i < user_num; i++) {
         int pipefd[2];
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
             percentage_filled_mod = (100*num_bytes_mod)/buff_mod.msg_qbytes;
             printf("message sent to mod form group %d user %d percentage filled: %d message rem: %d\n",all_messages[j].modifyingGroup, all_messages[j].user, percentage_filled_mod, total_messages - msg_sent_to_mod);
             if(percentage_filled_mod >= 80){
-                sleep(0.25);
+                sleep(1);
             }
         }
     }
@@ -267,9 +267,9 @@ int main(int argc, char *argv[]) {
     }
     qsort(to_validation, valid_messages, sizeof(Message), compare_messages);
     printf("Total messages received: %d, valid messages %d, active users %d\n", total_messages, valid_messages, user_active);
-    for(int i=0;i<valid_messages;i++){
-        printf("message to validation from group %d user %d timestamp %d\n",to_validation[i].modifyingGroup, to_validation[i].user,to_validation[i].timestamp);
-    }
+    // for(int i=0;i<valid_messages;i++){
+    //     printf("message to validation from group %d user %d timestamp %d\n",to_validation[i].modifyingGroup, to_validation[i].user,to_validation[i].timestamp);
+    // }
     for (int i = 0; i < valid_messages; i++) {
         //printf("message to validation from group %d user %d timestamp %d\n",to_validation[i].modifyingGroup, to_validation[i].user,to_validation[i].timestamp);
         if (msgsnd(msg_id_val, &to_validation[i], sizeof(Message) - sizeof(long), 0) == -1) {
