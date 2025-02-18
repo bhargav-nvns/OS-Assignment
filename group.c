@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
             temp.mtype = temp.mtype - 70;
             recived_msg[num_recived] = temp;
             num_recived++;
-            printf("message recived from mod to group %d user %d remaining: %d\n",temp.modifyingGroup, temp.user, total_messages - num_recived);
+            printf("message recived from mod to group %d user %d remaining: %d message: %s\n",temp.modifyingGroup, temp.user, total_messages - num_recived, temp.mtext);
         }
     }
     qsort(recived_msg, num_recived, sizeof(Message), compare_messages);

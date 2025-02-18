@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
 
     while(1){
         if(tot_msg_rcv <= 0){
-            printf("All messages processed and queue is empty. Deleting message queue and exiting.\n");
-            msgctl(msgid, IPC_RMID, NULL);
+            printf("All messages processed and exiting.\n");
+            //msgctl(msgid, IPC_RMID, NULL);
             break;
         }else{
             all_messages[msg_rcv - tot_msg_rcv].mtype = 100 + all_messages[msg_rcv - tot_msg_rcv].modifyingGroup;
@@ -161,8 +161,9 @@ int main(int argc, char *argv[]) {
                 perror("msgsnd");
                 exit(1);
             }else{
+                
+                printf("Message sent back to group %d user %d remainding : %d message: %s\n", all_messages[msg_rcv - tot_msg_rcv].modifyingGroup, all_messages[msg_rcv - tot_msg_rcv].user, tot_msg_rcv, all_messages[msg_rcv - tot_msg_rcv].mtext);
                 tot_msg_rcv--;
-                printf("Message sent back to group %d user %d remainding : %d\n", all_messages[msg_rcv - tot_msg_rcv].modifyingGroup, all_messages[msg_rcv - tot_msg_rcv].user, tot_msg_rcv);
             }
         }
 
